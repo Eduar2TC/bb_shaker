@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:audioplayers/audioplayers.dart';
 
+//singleton class
 class AudioManager {
   late AudioPlayer _audioPlayer;
   static final AudioManager _singleton = AudioManager._internal();

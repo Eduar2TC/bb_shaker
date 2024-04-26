@@ -15,7 +15,7 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   Stopwatch? stopwatch;
   Timer? timer;
   ShakeDetector? detector;
@@ -27,6 +27,11 @@ class _HomePageState extends State<HomePage> {
   //items
   late List<List<Widget>> widgets;
   late int? randomItem;
+  //animation controllers
+  late AnimationController _controller;
+  late Animation<double> _opacityAnimation;
+  late Animation<Offset> _translationAnimation;
+
   @override
   void initState() {
     super.initState();
@@ -34,18 +39,78 @@ class _HomePageState extends State<HomePage> {
     timer = setupTimer();
     detector = setupShakeDetector();
     limitShakes = getRandomShakeLimit();
+    //init animation controllers
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1200),
+      vsync: this,
+    );
     //items
     initItems();
+
+    _opacityAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(
+          0.0, // Start at 0% of the total duration
+          0.5, // End at 50% of the total duration
+          curve: Curves.ease,
+        ),
+      ),
+    );
+
+    _translationAnimation =
+        Tween<Offset>(begin: const Offset(0.0, -1000), end: Offset.zero)
+            .animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(
+          0.5, // Start at 50% of the total duration
+          1.0, // End at 100% of the total duration
+          curve: Curves.ease,
+        ),
+      ),
+    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _controller.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   void initItems() {
     widgets = [
-      [const CustomLayoutBuilder(imagePath: 'lib/assets/images/bb00.jpeg')],
-      [const CustomLayoutBuilder(imagePath: 'lib/assets/images/bb01.jpeg')],
-      [const CustomLayoutBuilder(imagePath: 'lib/assets/images/bb02.jpeg')],
-      [const CustomLayoutBuilder(imagePath: 'lib/assets/images/bb03.jpeg')],
+      [
+        CustomLayoutBuilder(
+            imagePath: 'lib/assets/images/shake.png',
+            animationController: _controller)
+      ],
+      [
+        CustomLayoutBuilder(
+            imagePath: 'lib/assets/images/bb00.jpeg',
+            animationController: _controller)
+      ],
+      [
+        CustomLayoutBuilder(
+            imagePath: 'lib/assets/images/bb01.jpeg',
+            animationController: _controller)
+      ],
+      [
+        CustomLayoutBuilder(
+            imagePath: 'lib/assets/images/bb02.jpeg',
+            animationController: _controller)
+      ],
+      [
+        CustomLayoutBuilder(
+            imagePath: 'lib/assets/images/bb03.jpeg',
+            animationController: _controller)
+      ],
     ];
-    randomItem = math.Random().nextInt(widgets.length);
+    //randomItem = math.Random().nextInt(widgets.length);
+    randomItem = 0;
   }
 
   Timer setupTimer() {
@@ -88,10 +153,10 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  int getRandomShakeLimit() {
-    const int min = 1;
-    const int max = 5;
-    return min + math.Random().nextInt((max + 1) - min);
+  int getRandomShakeLimit([int? min, int? max]) {
+    final int mini = min ?? 3;
+    final int maxi = max ?? 5;
+    return mini + math.Random().nextInt((maxi + 1) - mini);
   }
 
   void handleStopWatch() {
@@ -123,16 +188,17 @@ class _HomePageState extends State<HomePage> {
       btnActive = false;
       btnText = 'Playing';
       gameOver = false;
-      limitShakes = getRandomShakeLimit();
-      randomItem = math.Random().nextInt(widgets.length);
+      limitShakes = getRandomShakeLimit(3, 5);
+      randomItem = getRandomShakeLimit(1, widgets.length - 1);
       AudioManager().playAudio('sound0.mp3');
     });
   }
 
+//TODO:Animate eyes
   List<Widget> createWidgetGroup() {
     List<Widget> widgetGroup = List.from(widgets[randomItem!]);
     Map<int, List> positionedWidgets = {
-      0: [
+      1: [
         Positioned(
           top: 250,
           left: 150,
@@ -150,7 +216,7 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
       ],
-      1: [
+      2: [
         Positioned(
           top: 250,
           left: 200,
@@ -168,7 +234,7 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
       ],
-      2: [
+      3: [
         Positioned(
           top: 260,
           left: 100,
@@ -186,7 +252,7 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
       ],
-      3: [
+      4: [
         Positioned(
           top: 300,
           left: 50,
@@ -205,7 +271,7 @@ class _HomePageState extends State<HomePage> {
         ),
       ],
     };
-    if (gameOver) {
+    if (gameOver && positionedWidgets.containsKey(randomItem)) {
       widgetGroup.add(
         positionedWidgets[randomItem!]?[0],
       );
@@ -265,12 +331,31 @@ class _HomePageState extends State<HomePage> {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          ...createWidgetGroup(),
+          AnimatedBuilder(
+            animation: _controller,
+            builder: (BuildContext context, Widget? child) {
+              return Transform.translate(
+                offset: _translationAnimation.value,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: createWidgetGroup(),
+                ),
+              );
+            },
+          ),
           Positioned(
             bottom: 0,
             left: 0,
             right: 0,
-            child: buildPlayButton(),
+            child: AnimatedBuilder(
+              animation: _controller,
+              builder: (BuildContext context, Widget? child) {
+                return Opacity(
+                  opacity: _opacityAnimation.value,
+                  child: buildPlayButton(),
+                );
+              },
+            ),
           ),
         ],
       ),
