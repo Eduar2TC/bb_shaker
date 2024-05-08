@@ -3,8 +3,10 @@ import 'dart:developer';
 import 'dart:math' as math;
 
 import 'package:baby_shaker/Utils/audio_manager.dart';
+import 'package:baby_shaker/Utils/game_data.dart';
 import 'package:baby_shaker/pages/custom_widgets/custom_layout_builder.dart';
 import 'package:baby_shaker/pages/custom_widgets/custom_painter.dart';
+import 'package:baby_shaker/pages/history_page.dart';
 import 'package:flutter/material.dart';
 import 'package:shake/shake.dart';
 
@@ -24,9 +26,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   String btnText = 'Play';
   int shakeCounter = 0;
   bool gameOver = false;
+
   //items
   late List<List<Widget>> widgets;
   late int? randomItem;
+
   //animation controllers
   late AnimationController _controller;
   late Animation<double> _opacityAnimation;
@@ -272,6 +276,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       ],
     };
     if (gameOver && positionedWidgets.containsKey(randomItem)) {
+      GameData gameData = GameData();
+      gameData.saveGameData('gameData', returnTime());
       widgetGroup.add(
         positionedWidgets[randomItem!]?[0],
       );
@@ -312,16 +318,37 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       width: width,
       height: height * 0.1,
       color: Theme.of(context).colorScheme.primary,
-      child: Center(
-        child: Text(
-          returnTime(),
-          style: const TextStyle(
-            color: Colors.white,
-            //bigger font size from context
-            fontSize: 45.0,
-            fontWeight: FontWeight.bold,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Text(
+            returnTime(),
+            style: const TextStyle(
+              color: Colors.white,
+              //bigger font size from context
+              fontSize: 45.0,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-        ),
+          Align(
+            alignment: Alignment.centerRight,
+            child: IconButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => HistoryPage(),
+                  ),
+                );
+              },
+              icon: const Icon(
+                Icons.list,
+                color: Colors.white,
+                size: 40.0,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
