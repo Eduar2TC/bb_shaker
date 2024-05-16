@@ -23,13 +23,6 @@ class HistoryPage extends StatelessWidget {
         ),
         body: Column(
           children: [
-            Align(
-              alignment: Alignment.center,
-              child: Text(
-                'Best time',
-                style: Theme.of(context).textTheme.bodyLarge,
-              ),
-            ),
             Expanded(
               child: FutureBuilder<List<String>>(
                 future: gameData.getGameData('gameData'),
@@ -41,28 +34,56 @@ class HistoryPage extends StatelessWidget {
                     if (snapshot.hasError) {
                       return Text('Error: ${snapshot.error}');
                     } else {
-                      snapshot.data!.sort((a, b) => a.compareTo(b));
-                      String smallestItem = snapshot.data!.first;
-                      return CustomScrollView(
-                        slivers: [
-                          SliverList(
-                            delegate: SliverChildBuilderDelegate(
-                              (context, index) {
-                                return ListTile(
-                                  leading: const Icon(Icons.access_time),
-                                  trailing:
-                                      snapshot.data![index] == smallestItem
-                                          ? const Icon(Icons.star)
-                                          : null,
-                                  title: Text(snapshot.data![index]),
-                                  style: Theme.of(context).listTileTheme.style,
-                                );
-                              },
-                              childCount: snapshot.data!.length,
+                      if (snapshot.data!.isEmpty) {
+                        return Center(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.background,
+                              borderRadius: BorderRadius.circular(10),
                             ),
+                            child: const Text('No data found'),
                           ),
-                        ],
-                      );
+                        );
+                      } else {
+                        List<String> sortedData =
+                            List<String>.from(snapshot.data!);
+                        sortedData.sort((a, b) => a.compareTo(b));
+                        String smallestItem = sortedData.first;
+
+                        return CustomScrollView(
+                          slivers: [
+                            SliverAppBar(
+                              backgroundColor:
+                                  Theme.of(context).appBarTheme.backgroundColor,
+                              title: Text(
+                                'Best time',
+                                style: Theme.of(context).textTheme.bodyLarge,
+                              ),
+                              centerTitle: true,
+                              pinned: false,
+                              automaticallyImplyLeading: false,
+                            ),
+                            SliverList(
+                              delegate: SliverChildBuilderDelegate(
+                                (context, index) {
+                                  return ListTile(
+                                    tileColor: Colors.white,
+                                    leading: const Icon(Icons.access_time),
+                                    trailing:
+                                        snapshot.data![index] == smallestItem
+                                            ? const Icon(Icons.star)
+                                            : null,
+                                    title: Text(snapshot.data![index]),
+                                    style:
+                                        Theme.of(context).listTileTheme.style,
+                                  );
+                                },
+                                childCount: snapshot.data!.length,
+                              ),
+                            ),
+                          ],
+                        );
+                      }
                     }
                   }
                 },
